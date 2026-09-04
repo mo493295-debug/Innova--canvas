@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INNOVA-CANVAS — Cocreación de modelos de negocio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper:#f3f1ec;
+  --paper-raised:#fbfaf7;
+  --ink:#15171a;
+  --ink-soft:#5b5d61;
+  --line:#d9d6cd;
+  --line-soft:#e7e4dc;
+  --red:#c8391e;
+  --red-dark:#a52d16;
+  --teal:#2f6f6b;
+  --note-yellow:#f4d35e;
+  --note-blue:#a9d6e5;
+  --note-pink:#f2b6c0;
+  --note-green:#b7d99b;
+  --note-orange:#f2a65e;
+  --note-lilac:#c9b6e4;
+  --radius:3px;
+  --font-display:'Archivo Black', 'Inter', sans-serif;
+  --font-body:'Inter', sans-serif;
+  --font-mono:'IBM Plex Mono', monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:var(--font-body);cursor:pointer;}
+input,textarea,select{font-family:var(--font-body);}
+a{color:inherit;}
+.hidden{display:none !important;}
+::selection{background:var(--note-yellow);}
+
+/* ============ SETUP SCREEN ============ */
+#setup-screen{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:56px 20px 80px;
+}
+.setup-wrap{width:100%;max-width:960px;}
+.eyebrow{
+  font-size:11px;
+  letter-spacing:.14em;
+  font-weight:700;
+  color:var(--red);
+}
+.setup-wrap h1{
+  font-family:var(--font-display);
+  font-size:clamp(40px,8vw,74px);
+  line-height:0.92;
+  margin:10px 0 18px;
+  letter-spacing:-0.01em;
+}
+.setup-sub{
+  font-size:16px;
+  line-height:1.55;
+  color:var(--ink-soft);
+  max-width:620px;
+  margin:0 0 40px;
+}
+.setup-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  border-top:2px solid var(--ink);
+}
+.setup-col{
+  border-right:2px solid var(--ink);
+  padding:26px 30px 34px;
+}
+.setup-col:last-child{border-right:none;}
+.step-num{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.1em;
+  color:var(--red);
+  margin-bottom:14px;
+}
+.field{margin-bottom:16px;}
+.field label{
+  display:block;
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+}
+.field input,.field select{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--line);
+  background:var(--paper-raised);
+  border-radius:var(--radius);
+  font-size:14.5px;
+  color:var(--ink);
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--ink);
+}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.btn{
+  border:none;
+  border-radius:var(--radius);
+  padding:12px 22px;
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.02em;
+}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-ghost{background:transparent;border:1.5px solid var(--ink);color:var(--ink);}
+.btn-ghost:hover{background:var(--ink);color:#fff;}
+.btn-small{padding:6px 12px;font-size:12.5px;border-radius:3px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.setup-note{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  line-height:1.5;
+  margin-top:14px;
+}
+.setup-note button.linklike{
+  background:none;border:none;padding:0;
+  text-decoration:underline;color:var(--teal);font-size:12.5px;font-weight:600;
+}
+#setup-error{
+  color:var(--red-dark);font-size:13px;font-weight:600;margin-top:14px;min-height:0;
+}
+
+/* ============ BOARD SCREEN ============ */
+#board-screen{min-height:100vh;display:flex;flex-direction:column;}
+.board-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px;
+  border-bottom:2px solid var(--ink);
+  background:var(--paper-raised);
+  flex-wrap:wrap;
+  gap:12px;
+}
+.brand{display:flex;align-items:baseline;gap:14px;}
+.brand .logo{font-family:var(--font-display);font-size:20px;letter-spacing:-0.01em;}
+.brand .meta{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);}
+.brand .meta b{color:var(--ink);font-weight:600;}
+.conn-pill{
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  padding:3px 8px;border-radius:20px;
+}
+.conn-live{background:#dff0ea;color:#1f6b52;}
+.conn-local{background:#f1e6c9;color:#8a6a1a;}
+.header-right{display:flex;align-items:center;gap:14px;}
+.presence{display:flex;align-items:center;gap:6px;}
+.presence .avatars{display:flex;}
+.avatar{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:700;color:#fff;
+  border:2px solid var(--paper-raised);
+  margin-left:-8px;
+}
+.avatar:first-child{margin-left:0;}
+.share-status{
+  font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--teal);
+  display:flex;align-items:center;gap:5px;
+}
+
+.board-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 22px 10px;
+  flex-wrap:wrap;gap:14px;
+}
+.model-title-wrap{display:flex;flex-direction:column;gap:2px;min-width:220px;}
+.model-title-wrap .label{font-size:10.5px;letter-spacing:.1em;font-weight:700;color:var(--ink-soft);text-transform:uppercase;}
+#model-name-input{
+  font-family:var(--font-display);
+  font-size:22px;
+  border:none;background:transparent;
+  padding:2px 0;border-bottom:2px solid transparent;
+  color:var(--ink);width:100%;max-width:420px;
+}
+#model-name-input:focus{outline:none;border-bottom:2px solid var(--red);}
+
+.toolbar-group{display:flex;flex-direction:column;gap:5px;align-items:flex-start;}
+.toolbar-group .label{font-size:10px;letter-spacing:.08em;font-weight:700;color:var(--ink-soft);text-transform:uppercase;}
+.seg{display:flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden;}
+.seg button{
+  background:var(--paper-raised);border:none;
+  padding:7px 14px;font-size:12px;font-weight:700;letter-spacing:.03em;
+  color:var(--ink);border-right:1.5px solid var(--ink);
+}
+.seg button:last-child{border-right:none;}
+.seg button.active{background:var(--red);color:#fff;}
+.seg.seg-dark button.active{background:var(--ink);color:#fff;}
+
+/* ============ MAIN LAYOUT ============ */
+.board-main{
+  display:grid;
+  grid-template-columns:1fr 360px;
+  gap:16px;
+  padding:6px 22px 26px;
+  flex:1;
+  align-items:start;
+}
+.canvas-wrap{position:relative;}
+.canvas-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  grid-template-rows:auto auto auto;
+  gap:2px;
+  background:var(--ink);
+  border:2px solid var(--ink);
+}
+.block{
+  background:var(--paper-raised);
+  padding:10px 10px 12px;
+  min-height:150px;
+  position:relative;
+  display:flex;flex-direction:column;
+}
+.block-head{margin-bottom:8px;}
+.block-num{
+  font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);
+}
+.block-name{
+  font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+  margin-top:1px;
+}
+.block-desc{font-size:10.5px;color:var(--ink-soft);line-height:1.35;margin-top:3px;}
+.block-notes{
+  flex:1;display:flex;flex-direction:column;gap:6px;
+  overflow-y:auto;max-height:220px;padding-right:2px;
+}
+.note{
+  border-radius:2px;
+  padding:8px 9px 9px;
+  font-size:12.5px;
+  line-height:1.35;
+  position:relative;
+  box-shadow:1px 2px 0 rgba(0,0,0,.08);
+  cursor:pointer;
+  border:1px solid rgba(0,0,0,.08);
+}
+.note.selected{outline:2px solid var(--ink);outline-offset:1px;}
+.note.link-source{outline:2px dashed var(--red);outline-offset:1px;}
+.note .note-text{word-break:break-word;}
+.note .note-author{
+  display:block;margin-top:5px;font-size:9.5px;font-weight:700;
+  opacity:.6;text-transform:uppercase;letter-spacing:.03em;
+}
+.block-add{
+  margin-top:8px;
+  background:transparent;border:1.5px dashed var(--line);
+  color:var(--ink-soft);font-size:11.5px;font-weight:700;
+  padding:6px;border-radius:3px;
+}
+.block-add:hover{border-color:var(--ink);color:var(--ink);}
+
+.b-aliados{grid-column:1;grid-row:1/3;}
+.b-actividades{grid-column:2;grid-row:1;}
+.b-recursos{grid-column:2;grid-row:2;}
+.b-propuesta{grid-column:3;grid-row:1/3;}
+.b-relaciones{grid-column:4;grid-row:1;}
+.b-canales{grid-column:4;grid-row:2;}
+.b-segmentos{grid-column:5;grid-row:1/3;}
+.b-costos{grid-column:1/3;grid-row:3;}
+.b-ingresos{grid-column:4/6;grid-row:3;}
+
+#relations-svg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;
+}
+#relations-svg line{stroke:var(--red);stroke-width:1.6;}
+#relations-svg circle{fill:var(--red);}
+
+.link-hint{
+  position:sticky;top:0;z-index:5;
+  background:var(--ink);color:#fff;font-size:12px;font-weight:600;
+  padding:8px 12px;border-radius:3px;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.link-hint button{background:none;border:1px solid #fff;color:#fff;border-radius:3px;padding:3px 9px;font-size:11px;}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  border:2px solid var(--ink);
+  background:var(--paper-raised);
+  display:flex;flex-direction:column;
+  min-height:520px;
+  max-height:calc(100vh - 150px);
+  position:sticky;top:14px;
+}
+.sidebar-tabs{display:flex;border-bottom:2px solid var(--ink);}
+.sidebar-tabs button{
+  flex:1;background:transparent;border:none;border-right:1px solid var(--line);
+  padding:10px 4px;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.sidebar-tabs button:last-child{border-right:none;}
+.sidebar-tabs button.active{background:var(--ink);color:#fff;}
+.sidebar-body{flex:1;overflow-y:auto;padding:16px;font-size:13px;}
+.sidebar-body h3{
+  font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px;
+  color:var(--ink-soft);
+}
+.empty-note{color:var(--ink-soft);font-size:12.5px;font-style:italic;}
+
+/* DETALLE */
+.detail-empty{color:var(--ink-soft);font-size:13px;line-height:1.5;}
+.detail-block-tag{
+  display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  background:var(--ink);color:#fff;padding:3px 8px;border-radius:20px;margin-bottom:10px;
+}
+.detail-text{
+  width:100%;border:1.5px solid var(--line);border-radius:3px;padding:9px;font-size:13.5px;
+  min-height:70px;resize:vertical;margin-bottom:10px;
+}
+.detail-actions{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.rel-item{
+  border-top:1px solid var(--line-soft);padding:9px 0;font-size:12.5px;line-height:1.4;
+}
+.rel-item .rel-other{font-weight:700;}
+.rel-item .rel-desc{color:var(--ink-soft);margin-top:2px;}
+.files-list{margin-top:10px;}
+.file-chip{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:12px;margin-bottom:6px;
+}
+.file-chip a{text-decoration:underline;color:var(--teal);font-weight:600;}
+
+/* CHAT / BLOG */
+.msg-list{display:flex;flex-direction:column;gap:10px;padding-bottom:10px;}
+.msg{border-left:3px solid var(--line);padding:5px 0 5px 10px;}
+.msg .msg-meta{font-size:10.5px;color:var(--ink-soft);font-weight:700;letter-spacing:.02em;}
+.msg .msg-meta .role{color:var(--red);}
+.msg .msg-body{font-size:13px;margin-top:2px;line-height:1.4;}
+.composer{
+  border-top:2px solid var(--ink);padding:12px;display:flex;flex-direction:column;gap:8px;
+}
+.composer textarea{
+  border:1.5px solid var(--line);border-radius:3px;padding:8px;font-size:13px;resize:none;min-height:44px;
+}
+.blog-block-select{margin-bottom:10px;}
+.blog-block-select select{width:100%;padding:8px;border:1.5px solid var(--line);border-radius:3px;font-size:12.5px;}
+
+/* GUIA */
+.guide-block{margin-bottom:16px;}
+.guide-block h4{
+  font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;
+  margin:0 0 6px;border-bottom:1.5px solid var(--ink);padding-bottom:4px;
+}
+.guide-block ul{margin:0;padding-left:16px;}
+.guide-block li{font-size:12.5px;line-height:1.5;margin-bottom:4px;color:var(--ink-soft);}
+
+/* DATOS */
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13px;}
+.stat-row b{font-family:var(--font-mono);}
+.datos-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.share-link-box{
+  margin-top:10px;background:var(--paper);border:1.5px solid var(--line);border-radius:3px;
+  padding:8px;font-family:var(--font-mono);font-size:11px;word-break:break-all;
+}
+
+/* MODALS */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(21,23,26,.55);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;
+}
+.modal{
+  background:var(--paper-raised);border:2px solid var(--ink);border-radius:4px;
+  max-width:480px;width:100%;padding:24px;
+}
+.modal h2{font-family:var(--font-display);font-size:20px;margin:0 0 14px;}
+.modal .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+.modal pre{background:var(--paper);border:1px solid var(--line);padding:12px;font-size:11px;
+  overflow-x:auto;max-height:340px;overflow-y:auto;line-height:1.5;font-family:var(--font-mono);}
+.modal textarea{width:100%;border:1.5px solid var(--line);border-radius:3px;padding:9px;font-size:13px;min-height:70px;}
+
+.readonly-banner{
+  background:var(--ink);color:#fff;font-size:12px;font-weight:700;text-align:center;
+  padding:8px;letter-spacing:.03em;
+}
+
+@media (max-width:980px){
+  .board-main{grid-template-columns:1fr;}
+  .sidebar{position:static;max-height:520px;}
+  .canvas-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:auto;}
+  .b-aliados,.b-actividades,.b-recursos,.b-propuesta,.b-relaciones,.b-canales,.b-segmentos{grid-column:auto;grid-row:auto;}
+  .b-costos,.b-ingresos{grid-column:1/3;grid-row:auto;}
+  #relations-svg{display:none;}
+  .setup-grid{grid-template-columns:1fr;}
+  .setup-col{border-right:none;border-bottom:2px solid var(--ink);}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- SETUP SCREEN -->
+<!-- ============================================================ -->
+<div id="setup-screen">
+  <div class="setup-wrap">
+    <div class="eyebrow">COCREACIÓN DE MODELOS DE NEGOCIO</div>
+    <h1>INNOVA-CANVAS</h1>
+    <p class="setup-sub">
+      Tablero de los nueve bloques de la ontología de Osterwalder para el trabajo simultáneo de un equipo real:
+      aportes sobre el tablero, chat, blog por bloque, relaciones argumentadas entre elementos y archivos de
+      apoyo. Complementa el ejercicio presencial alrededor del tablero, en la línea del aplicativo SIMON.
+    </p>
+
+    <div class="setup-grid">
+      <div class="setup-col">
+        <div class="step-num">1. ENTRA A LA SALA DEL EQUIPO</div>
+        <div class="field">
+          <label for="in-name">Tu nombre real</label>
+          <input id="in-name" type="text" placeholder="Ej. Carla Pérez" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="in-role">Tu rol en el ejercicio</label>
+          <input id="in-role" type="text" placeholder="Ej. Mercadeo, Finanzas, Operaciones...">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="in-room">Código de la sala</label>
+            <input id="in-room" type="text" placeholder="EQUIPO-01" style="text-transform:uppercase;">
+          </div>
+          <div class="field">
+            <label for="in-team">Equipo</label>
+            <input id="in-team" type="text" placeholder="Ej. Equipo 3">
+          </div>
+        </div>
+        <div class="field">
+          <label for="in-model">Modelo de negocio que van a diseñar</label>
+          <input id="in-model" type="text" placeholder="Ej. Hospitalización domiciliaria">
+        </div>
+        <button class="btn btn-primary" id="btn-enter" style="width:100%;margin-top:6px;">Entrar al tablero</button>
+        <div id="setup-error"></div>
+        <p class="setup-note">
+          Todos los que entren con el mismo código de sala trabajan sobre el mismo tablero.
+          Comparte el enlace con el código de sala a tus compañeros.
+        </p>
+      </div>
+
+      <div class="setup-col">
+        <div class="step-num">2. SINCRONIZACIÓN REAL (SUPABASE)</div>
+        <div class="field">
+          <label for="in-url">Project URL</label>
+          <input id="in-url" type="text" placeholder="https://xxxxxxxx.supabase.co">
+        </div>
+        <div class="field">
+          <label for="in-key">Anon public key</label>
+          <input id="in-key" type="text" placeholder="eyJhbGciOi...">
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost btn-small" id="btn-save-creds">Guardar credenciales</button>
+          <button class="linklike" id="btn-view-sql">Ver SQL de la tabla</button>
+        </div>
+        <p class="setup-note">
+          Pega los datos de tu proyecto de Supabase para que varios participantes trabajen a la vez desde
+          distintos computadores. Sin ellos, la sala funciona en este navegador y guarda localmente
+          (útil para probar la app sola en varias pestañas).
+        </p>
+        <p class="setup-note" id="creds-status" style="font-weight:700;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- BOARD SCREEN -->
+<!-- ============================================================ -->
+<div id="board-screen" class="hidden">
+  <div id="readonly-banner" class="readonly-banner hidden">Vista de solo lectura — enlace compartido con el profesor</div>
+
+  <div class="board-header">
+    <div class="brand">
+      <div class="logo">INNOVA-CANVAS</div>
+      <div class="meta">SALA <b id="hdr-room">—</b> · <span id="conn-pill" class="conn-pill conn-local">LOCAL</span></div>
+    </div>
+    <div class="header-right">
+      <div class="presence">
+        <span style="font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--ink-soft);">EN LA SALA</span>
+        <div class="avatars" id="presence-avatars"></div>
+      </div>
+      <div class="share-status hidden" id="share-status">✓ COMPARTIDO CON EL PROFESOR</div>
+      <button class="btn btn-primary" id="btn-share">Guardar y compartir</button>
+    </div>
+  </div>
+
+  <div class="board-toolbar">
+    <div class="model-title-wrap">
+      <div class="label">Modelo de negocio</div>
+      <input id="model-name-input" placeholder="Modelo de negocio sin título">
+    </div>
+
+    <div class="toolbar-group">
+      <div class="label">Paso</div>
+      <div class="seg" id="seg-step">
+        <button data-step="visualizar" class="active">Visualizar</button>
+        <button data-step="evaluar">Evaluar</button>
+        <button data-step="innovar">Innovar</button>
+      </div>
+    </div>
+
+    <div class="toolbar-group">
+      <div class="label">Relaciones</div>
+      <div class="seg seg-dark" id="seg-rel">
+        <button data-rel="ocultas">Ocultas</button>
+        <button data-rel="hover" class="active">Al pasar el puntero</button>
+        <button data-rel="todas">Todas</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-main">
+    <div class="canvas-wrap" id="canvas-wrap">
+      <svg id="relations-svg"></svg>
+      <div class="canvas-grid" id="canvas-grid"><!-- blocks injected by JS --></div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-tabs" id="sidebar-tabs">
+        <button data-tab="detalle" class="active">Detalle</button>
+        <button data-tab="chat">Chat</button>
+        <button data-tab="blog">Blog</button>
+        <button data-tab="guia">Guía</button>
+        <button data-tab="datos">Datos</button>
+      </div>
+      <div class="sidebar-body" id="sidebar-body"><!-- tab content injected --></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+<div id="modal-root"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   1. CONFIGURACIÓN DE LA ONTOLOGÍA (9 BLOQUES) + GUÍA POR PASO
+   ============================================================ */
+const BLOCKS = [
+  {id:"aliados",     cls:"b-aliados",     num:"8", name:"Red de aliados",              desc:"Aliados y proveedores en los que se apalanca la oferta.", color:"var(--note-lilac)"},
+  {id:"actividades", cls:"b-actividades", num:"7", name:"Actividades clave",            desc:"Lo que hay que hacer con los recursos para producir la oferta.", color:"var(--note-blue)"},
+  {id:"propuesta",   cls:"b-propuesta",   num:"1", name:"Propuesta de valor",           desc:"El paquete de productos y servicios y sus atributos.", color:"var(--note-yellow)"},
+  {id:"relaciones",  cls:"b-relaciones",  num:"4", name:"Relaciones con clientes",      desc:"Tipo de relación por segmento: personal, masiva, automatizada.", color:"var(--note-pink)"},
+  {id:"segmentos",   cls:"b-segmentos",   num:"5", name:"Segmentos de clientes",        desc:"Tipos de cliente a los que se dirige la oferta.", color:"var(--note-orange)"},
+  {id:"recursos",    cls:"b-recursos",    num:"6", name:"Recursos clave",               desc:"Físicos, intelectuales, humanos y financieros.", color:"var(--note-blue)"},
+  {id:"canales",     cls:"b-canales",     num:"3", name:"Canales de distrib. y comunic.", desc:"Cómo se accede a los clientes y se les comunica la oferta.", color:"var(--note-pink)"},
+  {id:"costos",      cls:"b-costos",      num:"9", name:"Estructura de costos",         desc:"Los costos más significativos del modelo.", color:"var(--note-green)"},
+  {id:"ingresos",    cls:"b-ingresos",    num:"2", name:"Fuentes de ingresos",          desc:"Transacciones, suscripciones, licenciamiento, pauta...", color:"var(--note-green)"},
+];
+const BLOCK_BY_ID = Object.fromEntries(BLOCKS.map(b=>[b.id,b]));
+
+const STEPS = [
+  {id:"visualizar", label:"Visualizar", intro:"Describan el modelo llenando cada bloque: cada elemento se codifica con una palabra o frase corta y se amplía en su descripción. Registren también las relaciones entre elementos."},
+  {id:"evaluar",    label:"Evaluar",    intro:"Cuestionen el modelo: fortalezas y debilidades de cada bloque o del conjunto, con criterios objetivos e información de apoyo."},
+  {id:"innovar",    label:"Innovar",    intro:"Hagan tormenta de ideas sobre mejoras y oportunidades por bloque; no descarten aún lo que parezca poco viable. Apóyense en mapas de valor y prototipos."},
+];
+
+const GUIDE = {
+  visualizar:{
+    aliados:["¿Quiénes son los aliados y proveedores estratégicos más importantes?","¿Quiénes apoyan con recursos y actividades?"],
+    actividades:["¿Cuáles son las actividades y procesos clave del modelo?","¿Qué actividades internas podrían externalizarse con mejor calidad o menor costo?"],
+    recursos:["¿Cuáles son los recursos más importantes y costosos? (personas, redes, instalaciones, competencias)"],
+    propuesta:["¿Qué se ofrece a los clientes, en productos y servicios?","¿Por qué pagan los clientes? ¿En qué se diferencia esta oferta de la de otros?"],
+    relaciones:["¿Qué tipo de relación se construye con cada segmento?","¿Existe una estrategia de gestión de la relación?"],
+    canales:["¿Cómo se llega a los clientes y cómo se les conquista?","¿A través de qué canales se interactúa con ellos?"],
+    segmentos:["¿Quiénes son los clientes? ¿Cómo se describen los distintos tipos?","¿En qué difieren los segmentos entre sí?"],
+    costos:["¿Cómo es la estructura de costos?","¿Cuáles son los costos más importantes al ejecutar el modelo?"],
+    ingresos:["¿Cómo se gana dinero en el negocio?","¿Qué tipo de ingresos se reciben? (transacciones, suscripciones, servicios...)"],
+  },
+  evaluar:{
+    aliados:["¿Se trabaja lo suficiente con los aliados?","¿Qué tan bien funciona la relación con socios y proveedores?","¿Hay demasiada dependencia de terceros?"],
+    actividades:["¿Qué tan eficiente es la ejecución de las actividades?","¿Se hace de más dentro de la organización, perdiendo foco?"],
+    recursos:["¿Se dispone de los recursos adecuados en calidad y cantidad?","¿Hay recursos de sobra que generan falta de enfoque?"],
+    propuesta:["¿La propuesta sigue satisfaciendo bien la necesidad del cliente?","¿Ofrecen los competidores algo similar a mejor precio?"],
+    relaciones:["¿Existe una estrategia clara de relacionamiento?","¿Se cuida a los clientes más rentables? ¿Se gasta de más en los que no lo son?"],
+    canales:["¿El diseño de canales llega bien al cliente?","¿Están integrados entre sí? ¿Son eficientes en costo?"],
+    segmentos:["¿Se conoce bien a los clientes y sus necesidades?","¿Hay grupos que puedan estar por abandonar la oferta?"],
+    costos:["¿La estructura de costos es adecuada y eficiente?","¿Está claro qué parte del negocio genera los mayores costos?"],
+    ingresos:["¿Qué tan estables y diversificadas son las fuentes de ingreso?","¿Se depende de muy pocas fuentes?"],
+  },
+  innovar:{
+    aliados:["¿Qué aliados podrían complementar la propuesta de valor?","¿Hay actividades que convenga encargar a un aliado?"],
+    actividades:["¿Las actividades encajan perfectamente con la propuesta de valor?","¿Cómo se pueden optimizar?"],
+    recursos:["¿Hay recursos de los que se pueda prescindir o sustituir?","¿Algún recurso lo podría proveer mejor un aliado?"],
+    propuesta:["¿Se puede ofrecer algo más a la medida de cada segmento?","¿Hay necesidades adicionales que se puedan cubrir fácilmente?"],
+    relaciones:["¿Qué nivel de personalización o autoservicio conviene para cada relación?"],
+    canales:["¿Se puede ampliar la base de clientes usando mejor los canales?","¿Se pueden integrar o sumar nuevos canales de distribución?"],
+    segmentos:["¿Existen nuevos segmentos por atender?","¿Conviene reagrupar los segmentos según sus necesidades?"],
+    costos:["¿Existe forma de reducir la estructura de costos?"],
+    ingresos:["¿Se pueden introducir nuevos flujos de ingreso (por ejemplo, alquilar en vez de vender)?","¿Se pueden hacer más ventas cruzadas?"],
+  }
+};
+
+const NOTE_COLORS = ["var(--note-yellow)","var(--note-blue)","var(--note-pink)","var(--note-green)","var(--note-orange)","var(--note-lilac)"];
+function colorForAuthor(name){
+  let h=0; for(let i=0;i<(name||"?").length;i++) h = (h*31 + name.charCodeAt(i))>>>0;
+  return NOTE_COLORS[h % NOTE_COLORS.length];
+}
+function initials(name){
+  if(!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]||"")[0]||"")+((parts[1]||"")[0]||"");
+}
+function uid(){return 'id-'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtTime(iso){
+  try{ const d = new Date(iso); return d.toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){return '';}
+}
+
+const SQL_SCHEMA = `-- INNOVA-CANVAS · esquema para Supabase
+create extension if not exists pgcrypto;
+
+create table if not exists innova_rooms (
+  room_code text primary key,
+  team text,
+  model_name text,
+  ready_to_share boolean default false,
+  shared_at timestamptz,
+  updated_at timestamptz default now()
+);
+
+create table if not exists innova_elements (
+  id uuid primary key default gen_random_uuid(),
+  room_code text references innova_rooms(room_code) on delete cascade,
+  step text not null,
+  block_id text not null,
+  content text not null,
+  author_name text,
+  author_role text,
+  created_at timestamptz default now()
+);
+
+create table if not exists innova_relations (
+  id uuid primary key default gen_random_uuid(),
+  room_code text references innova_rooms(room_code) on delete cascade,
+  step text not null,
+  from_element uuid references innova_elements(id) on delete cascade,
+  to_element uuid references innova_elements(id) on delete cascade,
+  description text,
+  author_name text,
+  created_at timestamptz default now()
+);
+
+create table if not exists innova_chat (
+  id uuid primary key default gen_random_uuid(),
+  room_code text references innova_rooms(room_code) on delete cascade,
+  author_name text,
+  author_role text,
+  message text,
+  created_at timestamptz default now()
+);
+
+create table if not exists innova_blog (
+  id uuid primary key default gen_random_uuid(),
+  room_code text references innova_rooms(room_code) on delete cascade,
+  block_id text,
+  author_name text,
+  author_role text,
+  message text,
+  created_at timestamptz default now()
+);
+
+create table if not exists innova_files (
+  id uuid primary key default gen_random_uuid(),
+  room_code text references innova_rooms(room_code) on delete cascade,
+  step text,
+  block_id text,
+  file_name text,
+  file_type text,
+  file_data text,
+  author_name text,
+  created_at timestamptz default now()
+);
+
+alter table innova_rooms enable row level security;
+alter table innova_elements enable row level security;
+alter table innova_relations enable row level security;
+alter table innova_chat enable row level security;
+alter table innova_blog enable row level security;
+alter table innova_files enable row level security;
+
+-- Política abierta para un ejercicio de clase (ajústenla si necesitan más control):
+create policy "public access rooms" on innova_rooms for all using (true) with check (true);
+create policy "public access elements" on innova_elements for all using (true) with check (true);
+create policy "public access relations" on innova_relations for all using (true) with check (true);
+create policy "public access chat" on innova_chat for all using (true) with check (true);
+create policy "public access blog" on innova_blog for all using (true) with check (true);
+create policy "public access files" on innova_files for all using (true) with check (true);
+
+alter publication supabase_realtime add table innova_elements, innova_relations, innova_chat, innova_blog, innova_files, innova_rooms;`;
+
+/* ============================================================
+   2. ESTADO GLOBAL
+   ============================================================ */
+const State = {
+  me: {name:"", role:""},
+  room: {code:"", team:"", modelName:""},
+  readOnly:false,
+  supabase:null,
+  connected:false,
+  channel:null,
+  presenceChannel:null,
+  peers:{}, // key -> {name, role}
+  currentStep:"visualizar",
+  relMode:"hover",
+  activeTab:"detalle",
+  selectedElementId:null,
+  linkSourceId:null,
+  blogBlock:"propuesta",
+  data:{ elements:[], relations:[], chat:[], blog:[], files:[], ready_to_share:false, shared_at:null }
+};
+
+/* ============================================================
+   3. PERSISTENCIA LOCAL (fallback sin Supabase)
+   ============================================================ */
+const LOCAL_PREFIX = "innova-canvas:";
+function localKey(room){ return LOCAL_PREFIX+room; }
+function loadLocal(room){
+  try{
+    const raw = localStorage.getItem(localKey(room));
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function saveLocal(){
+  try{
+    localStorage.setItem(localKey(State.room.code), JSON.stringify({
+      team:State.room.team, modelName:State.room.modelName, data:State.data
+    }));
+  }catch(e){ console.warn("No se pudo guardar localmente", e); }
+}
+window.addEventListener('storage', (e)=>{
+  if(!State.room.code) return;
+  if(e.key === localKey(State.room.code) && !State.connected){
+    const stored = loadLocal(State.room.code);
+    if(stored){
+      State.room.modelName = stored.modelName || State.room.modelName;
+      State.data = stored.data || State.data;
+      renderAll();
+    }
+  }
+});
+
+/* ============================================================
+   4. SUPABASE: CONEXIÓN Y SINCRONIZACIÓN REAL
+   ============================================================ */
+function getSavedCreds(){
+  try{ return JSON.parse(localStorage.getItem('innova-canvas:creds')||'null'); }catch(e){ return null; }
+}
+function saveCreds(url,key){
+  localStorage.setItem('innova-canvas:creds', JSON.stringify({url,key}));
+}
+
+async function connectSupabase(url, key){
+  State.supabase = window.supabase.createClient(url, key);
+  // sanity check: try a light query
+  const {error} = await State.supabase.from('innova_rooms').select('room_code').limit(1);
+  if(error) throw error;
+  State.connected = true;
+}
+
+async function ensureRoom(){
+  const sb = State.supabase;
+  const {data: existing} = await sb.from('innova_rooms').select('*').eq('room_code', State.room.code).maybeSingle();
+  if(existing){
+    State.room.team = existing.team || State.room.team;
+    State.room.modelName = existing.model_name || State.room.modelName;
+    State.data.ready_to_share = !!existing.ready_to_share;
+    State.data.shared_at = existing.shared_at;
+    await sb.from('innova_rooms').update({team:State.room.team}).eq('room_code', State.room.code);
+  } else {
+    await sb.from('innova_rooms').insert({
+      room_code:State.room.code, team:State.room.team, model_name:State.room.modelName
+    });
+  }
+}
+
+async function fetchAllRemote(){
+  const sb = State.supabase; const room = State.room.code;
+  const [els, rels, chat, blog, files] = await Promise.all([
+    sb.from('innova_elements').select('*').eq('room_code', room).order('created_at'),
+    sb.from('innova_relations').select('*').eq('room_code', room).order('created_at'),
+    sb.from('innova_chat').select('*').eq('room_code', room).order('created_at'),
+    sb.from('innova_blog').select('*').eq('room_code', room).order('created_at'),
+    sb.from('innova_files').select('*').eq('room_code', room).order('created_at'),
+  ]);
+  State.data.elements = els.data || [];
+  State.data.relations = rels.data || [];
+  State.data.chat = chat.data || [];
+  State.data.blog = blog.data || [];
+  State.data.files = files.data || [];
+}
+
+function subscribeRealtime(){
+  const sb = State.supabase; const room = State.room.code;
+  const ch = sb.channel('room:'+room)
+    .on('postgres_changes', {event:'*', schema:'public', table:'innova_elements', filter:`room_code=eq.${room}`}, handleRemoteChange('elements'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'innova_relations', filter:`room_code=eq.${room}`}, handleRemoteChange('relations'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'innova_chat', filter:`room_code=eq.${room}`}, handleRemoteChange('chat'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'innova_blog', filter:`room_code=eq.${room}`}, handleRemoteChange('blog'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'innova_files', filter:`room_code=eq.${room}`}, handleRemoteChange('files'))
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'innova_rooms', filter:`room_code=eq.${room}`}, (payload)=>{
+      State.data.ready_to_share = !!payload.new.ready_to_share;
+      State.data.shared_at = payload.new.shared_at;
+      State.room.modelName = payload.new.model_name || State.room.modelName;
+      renderAll();
+    })
+    .subscribe();
+  State.channel = ch;
+
+  // Presencia (quién está en la sala ahora)
+  const presence = sb.channel('presence:'+room, {config:{presence:{key: State.me.name+':'+uid()}}});
+  presence.on('presence',{event:'sync'},()=>{
+    const state = presence.presenceState();
+    State.peers = {};
+    Object.values(state).forEach(arr=>arr.forEach(p=>{ State.peers[p.name+p.role]= p; }));
+    renderPresence();
+  });
+  presence.subscribe(async (status)=>{
+    if(status === 'SUBSCRIBED'){
+      await presence.track({name:State.me.name, role:State.me.role});
+    }
+  });
+  State.presenceChannel = presence;
+}
+
+function handleRemoteChange(collection){
+  return (payload)=>{
+    const list = State.data[collection];
+    if(payload.eventType === 'INSERT'){
+      if(!list.find(x=>x.id===payload.new.id)) list.push(payload.new);
+    } else if(payload.eventType === 'UPDATE'){
+      const idx = list.findIndex(x=>x.id===payload.new.id);
+      if(idx>-1) list[idx]=payload.new;
+    } else if(payload.eventType === 'DELETE'){
+      const idx = list.findIndex(x=>x.id===payload.old.id);
+      if(idx>-1) list.splice(idx,1);
+    }
+    renderAll();
+  };
+}
+
+/* ---- Capa de datos unificada: usa Supabase si hay conexión, si no localStorage ---- */
+async function dbInsert(table, row){
+  row = Object.assign({id: uid(), created_at:new Date().toISOString(), room_code:State.room.code}, row);
+  if(State.connected){
+    const {data, error} = await State.supabase.from(table).insert(row).select().single();
+    if(error){ console.error(error); alert("No se pudo guardar en Supabase: "+error.message); return null; }
+    return data; // llegará también por realtime, pero devolvemos igual para respuesta inmediata
+  } else {
+    const coll = TABLE_TO_COLLECTION[table];
+    State.data[coll].push(row);
+    saveLocal();
+    renderAll();
+    return row;
+  }
+}
+async function dbUpdate(table, id, patch){
+  if(State.connected){
+    const {error} = await State.supabase.from(table).update(patch).eq('id', id);
+    if(error){ console.error(error); alert("No se pudo actualizar: "+error.message); }
+  } else {
+    const coll = TABLE_TO_COLLECTION[table];
+    const item = State.data[coll].find(x=>x.id===id);
+    if(item) Object.assign(item, patch);
+    saveLocal();
+    renderAll();
+  }
+}
+async function dbDelete(table, id){
+  if(State.connected){
+    const {error} = await State.supabase.from(table).delete().eq('id', id);
+    if(error){ console.error(error); alert("No se pudo eliminar: "+error.message); }
+  } else {
+    const coll = TABLE_TO_COLLECTION[table];
+    State.data[coll] = State.data[coll].filter(x=>x.id!==id);
+    saveLocal();
+    renderAll();
+  }
+}
+const TABLE_TO_COLLECTION = {
+  innova_elements:'elements', innova_relations:'relations', innova_chat:'chat',
+  innova_blog:'blog', innova_files:'files'
+};
+
+/* ============================================================
+   5. RENDER: TABLERO DE 9 BLOQUES
+   ============================================================ */
+const canvasGrid = document.getElementById('canvas-grid');
+
+function currentElements(){
+  return State.data.elements.filter(e=>e.step===State.currentStep);
+}
+function currentRelations(){
+  return State.data.relations.filter(r=>r.step===State.currentStep);
+}
+function elementsInBlock(blockId){
+  return currentElements().filter(e=>e.block_id===blockId);
+}
+
+function renderGrid(){
+  canvasGrid.innerHTML = BLOCKS.map(b=>{
+    const notes = elementsInBlock(b.id);
+    return `
+    <div class="block ${b.cls}" data-block="${b.id}">
+      <div class="block-head">
+        <div class="block-num">${b.num}</div>
+        <div class="block-name">${escapeHtml(b.name)}</div>
+        <div class="block-desc">${escapeHtml(b.desc)}</div>
+      </div>
+      <div class="block-notes" data-notes-for="${b.id}">
+        ${notes.map(n=>renderNote(n)).join('')}
+      </div>
+      ${State.readOnly ? '' : `<button class="block-add" data-add-block="${b.id}">+ Añadir elemento</button>`}
+    </div>`;
+  }).join('');
+
+  canvasGrid.querySelectorAll('[data-add-block]').forEach(btn=>{
+    btn.addEventListener('click', ()=> addElementPrompt(btn.getAttribute('data-add-block')));
+  });
+  canvasGrid.querySelectorAll('.note').forEach(el=>{
+    el.addEventListener('click', ()=> onNoteClick(el.getAttribute('data-id')));
+    el.addEventListener('mouseenter', ()=>{ if(State.relMode==='hover'){ drawRelations(el.getAttribute('data-id')); }});
+    el.addEventListener('mouseleave', ()=>{ if(State.relMode==='hover'){ drawRelations(null); }});
+  });
+
+  if(State.relMode==='todas') drawRelations('ALL');
+  else drawRelations(null);
+}
+
+function renderNote(n){
+  const color = colorForAuthor(n.author_name||'?');
+  const isSelected = n.id===State.selectedElementId ? 'selected' : '';
+  const isLinkSrc = n.id===State.linkSourceId ? 'link-source' : '';
+  return `<div class="note ${isSelected} ${isLinkSrc}" style="background:${color};" data-id="${n.id}">
+    <span class="note-text">${escapeHtml(n.content)}</span>
+    <span class="note-author">${escapeHtml(n.author_name||'anónimo')}</span>
+  </div>`;
+}
+
+async function addElementPrompt(blockId){
+  const text = prompt("Elemento para «"+BLOCK_BY_ID[blockId].name+"» (palabra o frase corta):");
+  if(!text || !text.trim()) return;
+  await dbInsert('innova_elements', {
+    step: State.currentStep, block_id: blockId, content: text.trim(),
+    author_name: State.me.name, author_role: State.me.role
+  });
+}
+
+function onNoteClick(id){
+  if(State.linkSourceId){
+    if(State.linkSourceId === id){ State.linkSourceId = null; renderAll(); return; }
+    openRelationModal(State.linkSourceId, id);
+    return;
+  }
+  State.selectedElementId = id;
+  State.activeTab = 'detalle';
+  renderAll();
+}
+
+/* ---- Relaciones: dibujo de líneas SVG entre notas ---- */
+function drawRelations(mode){
+  const svg = document.getElementById('relations-svg');
+  const wrapRect = document.getElementById('canvas-wrap').getBoundingClientRect();
+  svg.setAttribute('width', wrapRect.width);
+  svg.setAttribute('height', wrapRect.height);
+  svg.innerHTML = '';
+  if(State.relMode === 'ocultas' && mode !== 'ALL-FORCE') { return; }
+
+  let rels = currentRelations();
+  if(mode && mode!=='ALL'){
+    rels = rels.filter(r=> r.from_element===mode || r.to_element===mode);
+  } else if(!mode && State.relMode!=='todas'){
+    return;
+  }
+
+  rels.forEach(r=>{
+    const a = document.querySelector(`.note[data-id="${r.from_element}"]`);
+    const b = document.querySelector(`.note[data-id="${r.to_element}"]`);
+    if(!a||!b) return;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const x1 = ra.left+ra.width/2-wrapRect.left, y1 = ra.top+ra.height/2-wrapRect.top;
+    const x2 = rb.left+rb.width/2-wrapRect.left, y2 = rb.top+rb.height/2-wrapRect.top;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('title', r.description||'');
+    svg.appendChild(line);
+    [[x1,y1],[x2,y2]].forEach(p=>{
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',p[0]); c.setAttribute('cy',p[1]); c.setAttribute('r',3);
+      svg.appendChild(c);
+    });
+  });
+}
+window.addEventListener('resize', ()=> drawRelations(State.relMode==='todas' ? 'ALL' : null));
+
+/* ---- Modal: crear relación ---- */
+function openRelationModal(fromId, toId){
+  const from = State.data.elements.find(e=>e.id===fromId);
+  const to = State.data.elements.find(e=>e.id===toId);
+  if(!from||!to) return;
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+  <div class="modal-overlay" id="rel-modal-overlay">
+    <div class="modal">
+      <h2>Relacionar elementos</h2>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:0;">
+        <b>${escapeHtml(from.content)}</b> (${BLOCK_BY_ID[from.block_id].name}) &nbsp;→&nbsp;
+        <b>${escapeHtml(to.content)}</b> (${BLOCK_BY_ID[to.block_id].name})
+      </p>
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);">Describe la relación</label>
+      <textarea id="rel-desc" placeholder="¿Por qué están conectados estos elementos?"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-small" id="rel-cancel">Cancelar</button>
+        <button class="btn btn-primary btn-small" id="rel-save">Guardar relación</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('rel-cancel').onclick = closeModal;
+  document.getElementById('rel-modal-overlay').addEventListener('click',(e)=>{ if(e.target.id==='rel-modal-overlay') closeModal(); });
+  document.getElementById('rel-save').onclick = async ()=>{
+    const desc = document.getElementById('rel-desc').value.trim();
+    await dbInsert('innova_relations', {
+      step: State.currentStep, from_element: fromId, to_element: toId,
+      description: desc, author_name: State.me.name
+    });
+    State.linkSourceId = null;
+    closeModal();
+    renderAll();
+  };
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
+
+/* ============================================================
+   6. SIDEBAR: DETALLE / CHAT / BLOG / GUÍA / DATOS
+   ============================================================ */
+function renderSidebarTabs(){
+  document.querySelectorAll('#sidebar-tabs button').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-tab')===State.activeTab);
+  });
+}
+
+function renderSidebarBody(){
+  const body = document.getElementById('sidebar-body');
+  if(State.activeTab==='detalle') body.innerHTML = renderDetalle();
+  else if(State.activeTab==='chat') body.innerHTML = renderChat();
+  else if(State.activeTab==='blog') body.innerHTML = renderBlog();
+  else if(State.activeTab==='guia') body.innerHTML = renderGuia();
+  else if(State.activeTab==='datos') body.innerHTML = renderDatos();
+  attachSidebarHandlers();
+}
+
+/* ---- DETALLE ---- */
+function renderDetalle(){
+  const el = State.data.elements.find(e=>e.id===State.selectedElementId);
+  if(!el){
+    return `<div class="detail-empty">Selecciona un elemento del tablero para ver su detalle, crear relaciones con otros elementos o adjuntar un archivo de apoyo.</div>`;
+  }
+  const rels = currentRelations().filter(r=>r.from_element===el.id || r.to_element===el.id);
+  const files = State.data.files.filter(f=>f.block_id===el.block_id && f.step===State.currentStep);
+  return `
+    <div class="detail-block-tag">${escapeHtml(BLOCK_BY_ID[el.block_id].name)}</div>
+    <textarea class="detail-text" id="detail-text-area" ${State.readOnly?'disabled':''}>${escapeHtml(el.content)}</textarea>
+    <div class="detail-actions">
+      ${State.readOnly?'':`<button class="btn btn-ghost btn-small" id="btn-save-detail">Guardar cambio</button>`}
+      ${State.readOnly?'':`<button class="btn btn-ghost btn-small" id="btn-start-link">Crear relación</button>`}
+      ${State.readOnly?'':`<button class="btn btn-ghost btn-small" id="btn-delete-note" style="border-color:var(--red);color:var(--red-dark);">Eliminar</button>`}
+    </div>
+    <h3>Relaciones (${rels.length})</h3>
+    ${rels.length? rels.map(r=>{
+      const otherId = r.from_element===el.id ? r.to_element : r.from_element;
+      const other = State.data.elements.find(e=>e.id===otherId);
+      return `<div class="rel-item"><span class="rel-other">${other?escapeHtml(other.content):'(elemento eliminado)'}</span>
+        ${other?` · <span style="color:var(--ink-soft);font-size:11px;">${escapeHtml(BLOCK_BY_ID[other.block_id].name)}</span>`:''}
+        ${r.description?`<div class="rel-desc">${escapeHtml(r.description)}</div>`:''}
+      </div>`;
+    }).join('') : `<div class="empty-note">Sin relaciones registradas todavía.</div>`}
+
+    <h3 style="margin-top:16px;">Archivos de apoyo del bloque</h3>
+    <div class="files-list">
+      ${files.length? files.map(f=>`
+        <div class="file-chip">
+          <a href="${f.file_data}" download="${escapeHtml(f.file_name)}">${escapeHtml(f.file_name)}</a>
+          ${State.readOnly?'':`<button class="btn btn-ghost btn-small" data-del-file="${f.id}" style="padding:2px 8px;">✕</button>`}
+        </div>`).join('') : `<div class="empty-note">Sin archivos adjuntos.</div>`}
+    </div>
+    ${State.readOnly?'':`<input type="file" id="file-input-detail" style="margin-top:8px;font-size:11px;">`}
+  `;
+}
+
+/* ---- CHAT (por sala, general) ---- */
+function renderChat(){
+  const msgs = State.data.chat;
+  return `
+    <h3>Chat del equipo</h3>
+    <div class="msg-list">
+      ${msgs.length? msgs.map(m=>`
+        <div class="msg" style="border-left-color:${colorForAuthor(m.author_name)}">
+          <div class="msg-meta">${escapeHtml(m.author_name||'anónimo')} <span class="role">${escapeHtml(m.author_role||'')}</span> · ${fmtTime(m.created_at)}</div>
+          <div class="msg-body">${escapeHtml(m.message)}</div>
+        </div>`).join('') : `<div class="empty-note">Todavía no hay mensajes. Empieza la conversación.</div>`}
+    </div>
+    ${State.readOnly?'':`
+    <div class="composer" style="border-top:none;padding:12px 0 0;">
+      <textarea id="chat-input" placeholder="Escribe un mensaje para el equipo..."></textarea>
+      <button class="btn btn-primary btn-small" id="btn-send-chat">Enviar</button>
+    </div>`}
+  `;
+}
+
+/* ---- BLOG (por bloque temático) ---- */
+function renderBlog(){
+  const msgs = State.data.blog.filter(m=>m.block_id===State.blogBlock);
+  return `
+    <h3>Blog por bloque</h3>
+    <div class="blog-block-select">
+      <select id="blog-block-select">
+        ${BLOCKS.map(b=>`<option value="${b.id}" ${b.id===State.blogBlock?'selected':''}>${escapeHtml(b.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="msg-list">
+      ${msgs.length? msgs.map(m=>`
+        <div class="msg" style="border-left-color:${colorForAuthor(m.author_name)}">
+          <div class="msg-meta">${escapeHtml(m.author_name||'anónimo')} <span class="role">${escapeHtml(m.author_role||'')}</span> · ${fmtTime(m.created_at)}</div>
+          <div class="msg-body">${escapeHtml(m.message)}</div>
+        </div>`).join('') : `<div class="empty-note">Sin comentarios en este bloque aún. Registra aquí fortalezas, debilidades e ideas.</div>`}
+    </div>
+    ${State.readOnly?'':`
+    <div class="composer" style="border-top:none;padding:12px 0 0;">
+      <textarea id="blog-input" placeholder="Comenta sobre este bloque..."></textarea>
+      <button class="btn btn-primary btn-small" id="btn-send-blog">Publicar</button>
+    </div>`}
+  `;
+}
+
+/* ---- GUÍA (preguntas orientadoras según el paso) ---- */
+function renderGuia(){
+  const step = State.currentStep;
+  const stepInfo = STEPS.find(s=>s.id===step);
+  const order = ["aliados","actividades","recursos","propuesta","relaciones","canales","segmentos","costos","ingresos"];
+  return `
+    <h3>Guía — Paso: ${escapeHtml(stepInfo.label)}</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-top:-4px;">${escapeHtml(stepInfo.intro)}</p>
+    ${order.map(bid=>{
+      const b = BLOCK_BY_ID[bid];
+      const qs = GUIDE[step][bid] || [];
+      return `<div class="guide-block">
+        <h4>${escapeHtml(b.name)}</h4>
+        <ul>${qs.map(q=>`<li>${escapeHtml(q)}</li>`).join('')}</ul>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+/* ---- DATOS (resumen + compartir/SQL) ---- */
+function renderDatos(){
+  const els = State.data.elements.length;
+  const rels = State.data.relations.length;
+  const chatN = State.data.chat.length;
+  const blogN = State.data.blog.length;
+  const filesN = State.data.files.length;
+  const shareUrl = buildShareUrl();
+  return `
+    <h3>Resumen del tablero</h3>
+    <div class="stat-row"><span>Elementos (los 3 pasos)</span><b>${els}</b></div>
+    <div class="stat-row"><span>Relaciones registradas</span><b>${rels}</b></div>
+    <div class="stat-row"><span>Mensajes de chat</span><b>${chatN}</b></div>
+    <div class="stat-row"><span>Comentarios de blog</span><b>${blogN}</b></div>
+    <div class="stat-row"><span>Archivos adjuntos</span><b>${filesN}</b></div>
+    <div class="stat-row"><span>Estado</span><b>${State.data.ready_to_share? 'Compartido' : 'En construcción'}</b></div>
+
+    <div class="datos-actions">
+      <button class="btn btn-ghost btn-small" id="btn-export-json">Descargar copia (.json)</button>
+      <button class="btn btn-ghost btn-small" id="btn-show-sql">Ver SQL de la tabla</button>
+    </div>
+    <h3 style="margin-top:18px;">Enlace de solo lectura</h3>
+    <p style="font-size:12px;color:var(--ink-soft);">Compártelo con el profesor cuando el canvas esté listo.</p>
+    <div class="share-link-box" id="share-link-box">${escapeHtml(shareUrl)}</div>
+    <button class="btn btn-ghost btn-small" id="btn-copy-link" style="margin-top:8px;">Copiar enlace</button>
+  `;
+}
+
+function attachSidebarHandlers(){
+  // DETALLE
+  const saveBtn = document.getElementById('btn-save-detail');
+  if(saveBtn) saveBtn.onclick = async ()=>{
+    const val = document.getElementById('detail-text-area').value.trim();
+    if(!val) return;
+    await dbUpdate('innova_elements', State.selectedElementId, {content: val});
+  };
+  const linkBtn = document.getElementById('btn-start-link');
+  if(linkBtn) linkBtn.onclick = ()=>{
+    State.linkSourceId = State.selectedElementId;
+    renderAll();
+  };
+  const delBtn = document.getElementById('btn-delete-note');
+  if(delBtn) delBtn.onclick = async ()=>{
+    if(!confirm('¿Eliminar este elemento y sus relaciones?')) return;
+    const id = State.selectedElementId;
+    const relsToDelete = State.data.relations.filter(r=>r.from_element===id||r.to_element===id);
+    for(const r of relsToDelete){ await dbDelete('innova_relations', r.id); }
+    await dbDelete('innova_elements', id);
+    State.selectedElementId = null;
+    renderAll();
+  };
+  const fileInput = document.getElementById('file-input-detail');
+  if(fileInput) fileInput.onchange = async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 800*1024){ alert('Para este demo, usa archivos menores a 800 KB (o conecta un bucket de Supabase Storage para archivos grandes).'); return; }
+    const el = State.data.elements.find(x=>x.id===State.selectedElementId);
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      await dbInsert('innova_files', {
+        step: State.currentStep, block_id: el.block_id, file_name: file.name,
+        file_type: file.type, file_data: reader.result, author_name: State.me.name
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  document.querySelectorAll('[data-del-file]').forEach(btn=>{
+    btn.onclick = ()=> dbDelete('innova_files', btn.getAttribute('data-del-file'));
+  });
+
+  // CHAT
+  const sendChat = document.getElementById('btn-send-chat');
+  if(sendChat) sendChat.onclick = async ()=>{
+    const ta = document.getElementById('chat-input');
+    const val = ta.value.trim(); if(!val) return;
+    ta.value='';
+    await dbInsert('innova_chat', {author_name:State.me.name, author_role:State.me.role, message:val});
+  };
+
+  // BLOG
+  const blogSel = document.getElementById('blog-block-select');
+  if(blogSel) blogSel.onchange = ()=>{ State.blogBlock = blogSel.value; renderSidebarBody(); };
+  const sendBlog = document.getElementById('btn-send-blog');
+  if(sendBlog) sendBlog.onclick = async ()=>{
+    const ta = document.getElementById('blog-input');
+    const val = ta.value.trim(); if(!val) return;
+    ta.value='';
+    await dbInsert('innova_blog', {block_id:State.blogBlock, author_name:State.me.name, author_role:State.me.role, message:val});
+  };
+
+  // DATOS
+  const exportBtn = document.getElementById('btn-export-json');
+  if(exportBtn) exportBtn.onclick = ()=>{
+    const blob = new Blob([JSON.stringify({room:State.room, data:State.data}, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `innova-canvas-${State.room.code}.json`;
+    a.click();
+  };
+  const sqlBtn = document.getElementById('btn-show-sql');
+  if(sqlBtn) sqlBtn.onclick = showSqlModal;
+  const copyBtn = document.getElementById('btn-copy-link');
+  if(copyBtn) copyBtn.onclick = ()=>{
+    navigator.clipboard.writeText(buildShareUrl()).then(()=>{
+      copyBtn.textContent = '¡Copiado!';
+      setTimeout(()=> copyBtn.textContent='Copiar enlace', 1500);
+    });
+  };
+}
+
+function buildShareUrl(){
+  const url = new URL(window.location.href.split('?')[0]);
+  url.searchParams.set('room', State.room.code);
+  url.searchParams.set('view', 'readonly');
+  const creds = getSavedCreds();
+  if(creds && creds.url) url.searchParams.set('sb', '1');
+  return url.toString();
+}
+
+/* ============================================================
+   7. PRESENCIA (avatares "EN LA SALA")
+   ============================================================ */
+function renderPresence(){
+  const box = document.getElementById('presence-avatars');
+  const people = State.connected ? Object.values(State.peers) : [State.me];
+  const uniq = [];
+  const seen = new Set();
+  people.forEach(p=>{ const k=p.name+p.role; if(!seen.has(k)){seen.add(k); uniq.push(p);} });
+  box.innerHTML = uniq.map(p=>`<div class="avatar" style="background:${colorForAuthor(p.name)}" title="${escapeHtml(p.name)} — ${escapeHtml(p.role||'')}">${escapeHtml(initials(p.name).toUpperCase())}</div>`).join('');
+}
+
+/* ============================================================
+   8. COMPARTIR / GUARDAR
+   ============================================================ */
+async function markShared(){
+  const ok = confirm('¿El equipo considera que el canvas está listo para compartir con el profesor?');
+  if(!ok) return;
+  State.data.ready_to_share = true;
+  State.data.shared_at = new Date().toISOString();
+  if(State.connected){
+    await State.supabase.from('innova_rooms').update({
+      ready_to_share:true, shared_at:State.data.shared_at, model_name:State.room.modelName
+    }).eq('room_code', State.room.code);
+  } else {
+    saveLocal();
+  }
+  renderAll();
+  alert('Listo. Comparte el enlace de solo lectura desde la pestaña "Datos" en el panel derecho.');
+}
+
+/* ============================================================
+   9. RENDER GENERAL
+   ============================================================ */
+function renderHeader(){
+  document.getElementById('hdr-room').textContent = State.room.code || '—';
+  const pill = document.getElementById('conn-pill');
+  pill.textContent = State.connected ? 'EN VIVO' : 'LOCAL';
+  pill.className = 'conn-pill ' + (State.connected? 'conn-live':'conn-local');
+  document.getElementById('share-status').classList.toggle('hidden', !State.data.ready_to_share);
+  const mi = document.getElementById('model-name-input');
+  if(document.activeElement !== mi) mi.value = State.room.modelName || '';
+  document.getElementById('btn-share').disabled = State.readOnly;
+  document.getElementById('readonly-banner').classList.toggle('hidden', !State.readOnly);
+}
+
+function renderAll(){
+  renderHeader();
+  document.querySelectorAll('#seg-step button').forEach(b=> b.classList.toggle('active', b.getAttribute('data-step')===State.currentStep));
+  document.querySelectorAll('#seg-rel button').forEach(b=> b.classList.toggle('active', b.getAttribute('data-rel')===State.relMode));
+  renderGrid();
+  renderSidebarTabs();
+  renderSidebarBody();
+  renderPresence();
+}
+
+/* ============================================================
+   10. EVENTOS DE TOOLBAR / TABS
+   ============================================================ */
+document.getElementById('seg-step').addEventListener('click',(e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  State.currentStep = btn.getAttribute('data-step');
+  State.selectedElementId = null; State.linkSourceId = null;
+  renderAll();
+});
+document.getElementById('seg-rel').addEventListener('click',(e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  State.relMode = btn.getAttribute('data-rel');
+  renderAll();
+});
+document.getElementById('sidebar-tabs').addEventListener('click',(e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  State.activeTab = btn.getAttribute('data-tab');
+  renderAll();
+});
+document.getElementById('model-name-input').addEventListener('change', async (e)=>{
+  State.room.modelName = e.target.value;
+  if(State.connected){
+    await State.supabase.from('innova_rooms').update({model_name:State.room.modelName}).eq('room_code', State.room.code);
+  } else { saveLocal(); }
+});
+document.getElementById('btn-share').addEventListener('click', markShared);
+
+/* ============================================================
+   11. MODAL SQL
+   ============================================================ */
+function showSqlModal(){
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+  <div class="modal-overlay" id="sql-modal-overlay">
+    <div class="modal" style="max-width:640px;">
+      <h2>SQL para tu proyecto Supabase</h2>
+      <p style="font-size:12.5px;color:var(--ink-soft);">Ejecuta esto una sola vez en el SQL Editor de tu proyecto Supabase antes de conectar la app.</p>
+      <pre>${escapeHtml(SQL_SCHEMA)}</pre>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-small" id="sql-copy">Copiar SQL</button>
+        <button class="btn btn-primary btn-small" id="sql-close">Cerrar</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('sql-close').onclick = closeModal;
+  document.getElementById('sql-modal-overlay').addEventListener('click',(e)=>{ if(e.target.id==='sql-modal-overlay') closeModal(); });
+  document.getElementById('sql-copy').onclick = ()=>{
+    navigator.clipboard.writeText(SQL_SCHEMA).then(()=>{
+      document.getElementById('sql-copy').textContent = '¡Copiado!';
+    });
+  };
+}
+document.getElementById('btn-view-sql').addEventListener('click', showSqlModal);
+
+/* ============================================================
+   12. SETUP: GUARDAR CREDENCIALES + ENTRAR AL TABLERO
+   ============================================================ */
+(function initSetupCreds(){
+  const creds = getSavedCreds();
+  if(creds){
+    document.getElementById('in-url').value = creds.url||'';
+    document.getElementById('in-key').value = creds.key||'';
+    document.getElementById('creds-status').textContent = 'Credenciales guardadas en este navegador.';
+  }
+})();
+
+document.getElementById('btn-save-creds').addEventListener('click', ()=>{
+  const url = document.getElementById('in-url').value.trim();
+  const key = document.getElementById('in-key').value.trim();
+  if(!url || !key){ document.getElementById('creds-status').textContent = 'Completa Project URL y Anon public key.'; return; }
+  saveCreds(url,key);
+  document.getElementById('creds-status').textContent = 'Credenciales guardadas. Se usarán al entrar al tablero.';
+});
+
+document.getElementById('btn-enter').addEventListener('click', async ()=>{
+  const errBox = document.getElementById('setup-error');
+  errBox.textContent = '';
+  const name = document.getElementById('in-name').value.trim();
+  const role = document.getElementById('in-role').value.trim();
+  const room = document.getElementById('in-room').value.trim().toUpperCase();
+  const team = document.getElementById('in-team').value.trim();
+  const model = document.getElementById('in-model').value.trim();
+
+  if(!name || !room){ errBox.textContent = 'Escribe al menos tu nombre y el código de la sala.'; return; }
+
+  State.me = {name, role};
+  State.room = {code:room, team, modelName:model};
+
+  const btn = document.getElementById('btn-enter');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+
+  const creds = getSavedCreds();
+  const urlField = document.getElementById('in-url').value.trim();
+  const keyField = document.getElementById('in-key').value.trim();
+  const effectiveUrl = urlField || (creds&&creds.url) || '';
+  const effectiveKey = keyField || (creds&&creds.key) || '';
+
+  try{
+    if(effectiveUrl && effectiveKey){
+      await connectSupabase(effectiveUrl, effectiveKey);
+      await ensureRoom();
+      await fetchAllRemote();
+      subscribeRealtime();
+    } else {
+      const stored = loadLocal(room);
+      if(stored){
+        State.room.team = stored.team || team;
+        State.room.modelName = stored.modelName || model;
+        State.data = Object.assign(State.data, stored.data);
+      }
+      saveLocal();
+    }
+    enterBoard();
+  }catch(err){
+    console.error(err);
+    errBox.textContent = 'No se pudo conectar a Supabase: '+(err.message||err)+'. Verifica la URL/clave o entra sin sincronización real.';
+    btn.disabled = false; btn.textContent = 'Entrar al tablero';
+  }
+});
+
+function enterBoard(){
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('board-screen').classList.remove('hidden');
+  renderAll();
+}
+
+/* ============================================================
+   13. MODO SOLO LECTURA VÍA URL (?room=CODE&view=readonly)
+   ============================================================ */
+(async function checkReadonlyUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get('room');
+  const view = params.get('view');
+  if(!room) return;
+  document.getElementById('in-room').value = room;
+  if(view === 'readonly'){
+    State.readOnly = true;
+    document.getElementById('in-name').value = 'Profesor(a)';
+    document.getElementById('in-role').value = 'Evaluador';
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
